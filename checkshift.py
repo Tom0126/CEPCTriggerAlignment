@@ -56,7 +56,7 @@ def main(ecal_file_path,ahcal_file_path,save_dir):
     min_shift = np.amin(shifts)
 
     fig = plt.figure(figsize=(6, 5))
-    plt.hist(results, bins=(max_shift - min_shift), range=[min_shift, max_shift])
+    plt.hist(results, bins=(max_shift - min_shift+1), range=[min_shift-0.5, max_shift+0.5])
     fig_save_path = os.path.join(save_dir, '{}.png'.format(ecal_file_path[-27,-21]))
     plt.savefig(fig_save_path)
 
