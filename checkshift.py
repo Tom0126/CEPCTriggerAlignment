@@ -7,11 +7,12 @@
 
 # @Software: PyCharm
 
-from Data.ReadRoot import findMuonTrack,ReadRoot
+from Data.ReadRoot import findMuonTrack,ReadRoot, cutLoop
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 import os
+from collections import Counter
 
 
 
@@ -27,14 +28,17 @@ def main(ecal_file_path,ahcal_file_path,save_dir):
 
     ecal_hit_tag = ecal_root.readBranch(hittag)
     ecal_layer = ecal_root.readBranch(layer)
-    ecal_triggerid = ecal_root.readBranch(triggerid)
+    e_raw = ecal_root.readBranch(triggerid)
+    ecal_triggerid=cutLoop(e_raw)
+
 
     assert len(ecal_layer) == len(ecal_hit_tag)
     assert len(ecal_layer) == len(ecal_triggerid)
 
     ahcal_hit_tag = ahcal_root.readBranch(hittag)
     ahcal_layer = ahcal_root.readBranch(layer)
-    ahcal_triggerid = ahcal_root.readBranch(triggerid)
+    a_raw = ahcal_root.readBranch(triggerid)
+    ahcal_triggerid=cutLoop(a_raw)
 
     assert len(ahcal_layer) == len(ahcal_hit_tag)
     assert len(ahcal_layer) == len(ahcal_triggerid)
@@ -45,21 +49,48 @@ def main(ecal_file_path,ahcal_file_path,save_dir):
     ahcal_triggerid_picked = findMuonTrack(hit_tags=ahcal_hit_tag, layers=ahcal_layer, trigger_ID=ahcal_triggerid,
                                            layer_num=40)
 
+    # Fran
     results = []
     for e_trigid in ecal_triggerid_picked:
         for h_trigid in ahcal_triggerid_picked:
             results.append(e_trigid - h_trigid)
 
     shifts = np.array(results)
+    np.save('shifts.npy',shifts)
+    shifts=Counter(shifts)
 
-    max_shift = np.amax(shifts)
-    min_shift = np.amin(shifts)
+    filename = open(os.path.join(save_dir, '{}.txt'.format(ecal_file_path[-27:-21])), 'w')  # dict to txt
+    for k, v in shifts.items():
+        filename.write(str(k) + ':' + str(v))
+        filename.write('\n')
+    filename.close()
 
-    fig = plt.figure(figsize=(6, 5))
-    plt.hist(results, bins=(max_shift - min_shift+1), range=[min_shift-0.5, max_shift+0.5])
-    fig_save_path = os.path.join(save_dir, '{}.png'.format(ecal_file_path[-27,-21]))
+    fig1 = plt.figure(figsize=(6, 5))
+    plt.plot(shifts.keys(),shifts.values(),'.')
+    fig_save_path = os.path.join(save_dir, '{}.png'.format(ecal_file_path[-27:-21]))
     plt.savefig(fig_save_path)
+    plt.close(fig1)
 
+    fig2 = plt.figure(figsize=(6, 5))
+    plt.plot(np.arange(len(ecal_triggerid)),ecal_triggerid,'.',label='ecal')
+    plt.plot(np.arange(len(ahcal_triggerid)),ahcal_triggerid,'.',label='ahcal')
+    plt.legend()
+    fig_save_path = os.path.join(save_dir, 'triggerid{}.png'.format(ecal_file_path[-27:-21]))
+    plt.savefig(fig_save_path)
+    plt.close(fig2)
+
+    # Tom
+    cor = []
+    for gap in np.arange(-100,101):
+
+        ahcal_triggerid_picked = ahcal_triggerid_picked+gap
+
+        cor.append(len(np.intersect1d(ecal_triggerid_picked,ahcal_triggerid_picked)))
+    fig3 = plt.figure(figsize=(6, 5))
+    plt.plot(np.arange(-100,101),cor,'.')
+    fig_save_path = os.path.join(save_dir, 'cor_{}.png'.format(ecal_file_path[-27:-21]))
+    plt.savefig(fig_save_path)
+    plt.close(fig3)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
