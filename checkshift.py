@@ -21,32 +21,34 @@ def main(ecal_file_path,ahcal_file_path,save_dir):
     hittag = 'HitTag'
     layer = 'Layer'
     triggerid = 'TriggerID'
+    cellid='CellID'
+    event_num='Event_Num'
 
 
-    ecal_root = ReadRoot(ecal_file_path)
-    ahcal_root = ReadRoot(ahcal_file_path)
+    ecal_root = ReadRoot(ecal_file_path, tree_name='Raw_Hit')
+    ahcal_root = ReadRoot(ahcal_file_path, tree_name='Calib_Hit')
 
     ecal_hit_tag = ecal_root.readBranch(hittag)
-    ecal_layer = ecal_root.readBranch(layer)
+    ecal_cellIDs = ecal_root.readBranch(cellid)
     e_raw = ecal_root.readBranch(triggerid)
     ecal_triggerid=cutLoop(e_raw)
 
 
-    assert len(ecal_layer) == len(ecal_hit_tag)
-    assert len(ecal_layer) == len(ecal_triggerid)
+    assert len(ecal_cellIDs) == len(ecal_hit_tag)
+    assert len(ecal_cellIDs) == len(ecal_triggerid)
 
-    ahcal_hit_tag = ahcal_root.readBranch(hittag)
-    ahcal_layer = ahcal_root.readBranch(layer)
-    a_raw = ahcal_root.readBranch(triggerid)
+    ahcal_hit_tag = None
+    ahcal_cellIDs = ahcal_root.readBranch(cellid)
+    a_raw = ahcal_root.readBranch(event_num)
     ahcal_triggerid=cutLoop(a_raw)
 
-    assert len(ahcal_layer) == len(ahcal_hit_tag)
-    assert len(ahcal_layer) == len(ahcal_triggerid)
+
+    assert len(ahcal_cellIDs) == len(ahcal_triggerid)
 
     # find muon in ecal
-    ecal_triggerid_picked = findMuonTrack(hit_tags=ecal_hit_tag, layers=ecal_layer, trigger_ID=ecal_triggerid,
+    ecal_triggerid_picked = findMuonTrack(hit_tags=ecal_hit_tag, cellIDs=ecal_cellIDs, triggerIDs=ecal_triggerid,
                                           layer_num=32)
-    ahcal_triggerid_picked = findMuonTrack(hit_tags=ahcal_hit_tag, layers=ahcal_layer, trigger_ID=ahcal_triggerid,
+    ahcal_triggerid_picked = findMuonTrack(hit_tags=ahcal_hit_tag, cellIDs=ahcal_cellIDs, triggerIDs=ahcal_triggerid,
                                            layer_num=40)
 
     # Fran

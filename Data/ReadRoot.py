@@ -12,15 +12,23 @@ import uproot
 
 class ReadRoot():
 
-    def __init__(self, file_path):
+    def __init__(self, file_path, tree_name):
         self.file_path = file_path
         self.root_file = uproot.open(file_path)
-        tree = self.root_file['Raw_Hit']
+        tree = self.root_file[tree_name]
         self.tree = tree.arrays(library='np')
 
     def readBranch(self, branch):
         return self.tree[branch]
 
+def decodeCellIDs(cellIDs):
+
+    scale = 100000
+    layers = cellIDs // scale
+    # chips = (cellIDs - scale * layers) // 10000
+    # memo_ids = (cellIDs - scale * layers - 10000 * chips) // 100
+    # channels = cellIDs % 100
+    return layers
 
 def dirInit(layer):
     dict = {}
@@ -44,21 +52,25 @@ def cutLoop(triggerID):
 
     return np.array(results)
 
-def findMuonTrack(hit_tags, layers, trigger_ID, layer_num):
+def findMuonTrack(hit_tags, cellIDs, triggerIDs, layer_num):
 
     trigger_ID_picked = []
+    layers=decodeCellIDs(cellIDs)
 
-    for i, layers_event in enumerate(layers):
+    for i, cellID in enumerate(cellIDs):
 
         dicts = dirInit(layer_num)
         layers_fired = 0
         cells_fired = 0
         notshower = True
 
-        hit_tags_event = hit_tags[i]
-        layers_event = layers[i]
+        layers_event=layers[i]
 
-        assert len(hit_tags_event) == len(layers_event)
+        if hit_tags==None:
+            hit_tags_event = np.ones(len(layers_event))
+        else:
+            hit_tags_event = hit_tags[i]
+            assert len(hit_tags_event) == len(layers_event)
 
         # select cells in one event
         for j, hit_tag in enumerate(hit_tags_event):
@@ -83,13 +95,13 @@ def findMuonTrack(hit_tags, layers, trigger_ID, layer_num):
 
         if notshower and (cells_fired / layers_fired < 1.2) and (layers_fired > (0.8 * layer_num)):
 
-            trigger_ID_picked.append(trigger_ID[i])
+            trigger_ID_picked.append(triggerIDs[i])
 
     return np.array(trigger_ID_picked)
 
 
 if __name__ == '__main__':
-    ecal_path='/lustre/collider/songsiyuan/CEPC/Syn/fran_root_file/ECAL_Run255_20221029_121851.root'
+    ecal_path='/lustre/collider/songsiyuan/CEPC/Syn/ustc_root_file/ECAL_Run250_20221029_062916.root'
     ecal_root=uproot.open(ecal_path)
     keys=ecal_root.keys()
     print(keys)
