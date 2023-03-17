@@ -58,7 +58,7 @@ def main(ecal_file_path,ahcal_file_path,save_dir):
             results.append(e_trigid - h_trigid)
 
     shifts = np.array(results)
-    np.save('shifts.npy',shifts)
+    np.save('/cefs/higgs/siyuansong/Syn/shifts.npy',shifts)
     shifts=Counter(shifts)
 
     filename = open(os.path.join(save_dir, '{}.txt'.format(ecal_file_path[-27:-21])), 'w')  # dict to txt
@@ -74,13 +74,15 @@ def main(ecal_file_path,ahcal_file_path,save_dir):
     plt.close(fig1)
 
     fig2 = plt.figure(figsize=(6, 5))
-    plt.plot(np.arange(len(ecal_triggerid)),ecal_triggerid,'.',label='ecal')
-    plt.plot(np.arange(len(ahcal_triggerid)),ahcal_triggerid,'.',label='ahcal')
+    plt.plot(np.arange(len(e_raw)),e_raw,'.',label='ecal')
+    plt.plot(np.arange(len(a_raw)),a_raw,'.',label='ahcal')
     plt.legend()
     fig_save_path = os.path.join(save_dir, 'triggerid{}.png'.format(ecal_file_path[-27:-21]))
     plt.savefig(fig_save_path)
     plt.close(fig2)
 
+    print(e_raw)
+    print(a_raw)
     # Tom
     cor = []
     for gap in np.arange(-100,101):
