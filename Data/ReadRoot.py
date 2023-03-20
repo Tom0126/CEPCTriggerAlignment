@@ -21,8 +21,8 @@ class ReadRoot():
     def readBranch(self, branch):
         return self.tree[branch]
 
-def decodeCellIDs(cellIDs):
 
+def decodeCellIDs(cellIDs):
     scale = 100000
     layers = cellIDs // scale
     # chips = (cellIDs - scale * layers) // 10000
@@ -30,32 +30,34 @@ def decodeCellIDs(cellIDs):
     # channels = cellIDs % 100
     return layers
 
+
 def dirInit(layer):
     dict = {}
     for i in range(layer):
         dict[i] = 0
     return dict
 
+
 def cutLoop(triggerID):
-    results=[triggerID[0]]
-    period=0
-    loop=2**16
-    length=len(triggerID)
-    i=1
-    while i<length:
-        tid_current=period*loop+triggerID[i]
-        tid_former=results[i-1]
-        if tid_current<tid_former:
-            period+=1
-        results.append(period*loop+triggerID[i])
-        i+=1
+    results = [triggerID[0]]
+    period = 0
+    loop = 2 ** 16
+    length = len(triggerID)
+    i = 1
+    while i < length:
+        tid_current = period * loop + triggerID[i]
+        tid_former = results[i - 1]
+        if tid_current < tid_former:
+            period += 1
+        results.append(period * loop + triggerID[i])
+        i += 1
 
     return np.array(results)
 
-def findMuonTrack(hit_tags, cellIDs, triggerIDs, layer_num):
 
+def findMuonTrack(hit_tags, cellIDs, triggerIDs, layer_num):
     trigger_ID_picked = []
-    layers=decodeCellIDs(cellIDs)
+    layers = decodeCellIDs(cellIDs)
 
     for i, cellID in enumerate(cellIDs):
 
@@ -64,9 +66,9 @@ def findMuonTrack(hit_tags, cellIDs, triggerIDs, layer_num):
         cells_fired = 0
         notshower = True
 
-        layers_event=layers[i]
+        layers_event = layers[i]
 
-        if hit_tags==None:
+        if hit_tags == None:
             hit_tags_event = np.ones(len(layers_event))
         else:
             hit_tags_event = hit_tags[i]
@@ -94,16 +96,15 @@ def findMuonTrack(hit_tags, cellIDs, triggerIDs, layer_num):
                 cells_fired += value
 
         if notshower and (cells_fired / layers_fired < 1.2) and (layers_fired > (0.8 * layer_num)):
-
             trigger_ID_picked.append(triggerIDs[i])
 
     return np.array(trigger_ID_picked)
 
 
 if __name__ == '__main__':
-    ecal_path='/lustre/collider/songsiyuan/CEPC/Syn/ustc_root_file/ECAL_Run250_20221029_062916.root'
-    ecal_root=uproot.open(ecal_path)
-    keys=ecal_root.keys()
+    ecal_path = '/lustre/collider/songsiyuan/CEPC/Syn/ustc_root_file/ECAL_Run250_20221029_062916.root'
+    ecal_root = uproot.open(ecal_path)
+    keys = ecal_root.keys()
     print(keys)
     # triggerid=ahcal_root.readBranch('TriggerID')
     #
