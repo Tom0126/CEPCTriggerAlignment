@@ -1,5 +1,4 @@
 # CEPCTriggerAlignment
-Fix ECAL and AHCAL TriggerUD mismatch
 
 Input ECAL & AHCAL file path and directory for saving results.
 
