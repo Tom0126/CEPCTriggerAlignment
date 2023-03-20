@@ -1,2 +1,2 @@
 # CEPCTriggerAlignment
-Fix ECAL and AHCAL TriggerUD mismatch
+Fix ECAL and AHCAL TriggerID mismatch
