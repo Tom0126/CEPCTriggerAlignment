@@ -7,7 +7,7 @@
 
 # @Software: PyCharm
 
-from Data.ReadRoot import findMuonTrack,ReadRoot, cutLoop
+from Data.ReadRoot import findMuonTrack, ReadRoot, cutLoop
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
@@ -15,15 +15,19 @@ import os
 from collections import Counter
 
 
-
-def main(ecal_file_path,ahcal_file_path,save_dir):
-    run_no=ecal_file_path[-27:-21]
+def main(ecal_file_path, ahcal_file_path, save_dir):
+    run_no = ecal_file_path[-27:-21]
     hittag = 'HitTag'
     layer = 'Layer'
     triggerid = 'TriggerID'
-    cellid='CellID'
-    event_num='Event_Num'
+    cellid = 'CellID'
+    event_num = 'Event_Num'
 
+    if not os.path.exists(save_dir):
+        os.mkdir(save_dir)
+
+    if not os.path.exists(os.path.join(save_dir, 'Run')):
+        os.mkdir(os.path.join(save_dir, 'Run'))
 
     ecal_root = ReadRoot(ecal_file_path, tree_name='Raw_Hit')
     ahcal_root = ReadRoot(ahcal_file_path, tree_name='Calib_Hit')
@@ -31,8 +35,7 @@ def main(ecal_file_path,ahcal_file_path,save_dir):
     ecal_hit_tag = ecal_root.readBranch(hittag)
     ecal_cellIDs = ecal_root.readBranch(cellid)
     e_raw = ecal_root.readBranch(triggerid)
-    ecal_triggerid=cutLoop(e_raw)
-
+    ecal_triggerid = cutLoop(e_raw)
 
     assert len(ecal_cellIDs) == len(ecal_hit_tag)
     assert len(ecal_cellIDs) == len(ecal_triggerid)
@@ -40,8 +43,7 @@ def main(ecal_file_path,ahcal_file_path,save_dir):
     ahcal_hit_tag = None
     ahcal_cellIDs = ahcal_root.readBranch(cellid)
     a_raw = ahcal_root.readBranch(event_num)
-    ahcal_triggerid=cutLoop(a_raw)
-
+    ahcal_triggerid = cutLoop(a_raw)
 
     assert len(ahcal_cellIDs) == len(ahcal_triggerid)
 
@@ -52,7 +54,7 @@ def main(ecal_file_path,ahcal_file_path,save_dir):
                                            layer_num=40)
 
     # because of problems in ecal_triggerID, remove extremely large values of Ecal TriggerID.
-    ecal_triggerid_picked=ecal_triggerid_picked[ecal_triggerid_picked<(np.amax(ahcal_triggerid_picked)+3000)]
+    ecal_triggerid_picked = ecal_triggerid_picked[ecal_triggerid_picked < (np.amax(ahcal_triggerid_picked) + 3000)]
     # Fran
     results = []
     for e_trigid in ecal_triggerid_picked:
@@ -60,8 +62,8 @@ def main(ecal_file_path,ahcal_file_path,save_dir):
             results.append(e_trigid - h_trigid)
 
     shifts = np.array(results)
-    np.save('/cefs/higgs/siyuansong/Syn/shifts.npy',shifts)
-    shifts=Counter(shifts)
+    np.save('/cefs/higgs/siyuansong/Syn/shifts.npy', shifts)
+    shifts = Counter(shifts)
 
     # filename = open(os.path.join(save_dir, '{}.txt'.format(ecal_file_path[-27:-21])), 'w')  # dict to txt
     # for k, v in shifts.items():
@@ -77,19 +79,21 @@ def main(ecal_file_path,ahcal_file_path,save_dir):
     filename.close()
 
     fig1 = plt.figure(figsize=(6, 5))
-    ax=plt.gca()
-    plt.plot(shifts.keys(),shifts.values(),'.')
+    ax = plt.gca()
+    plt.plot(shifts.keys(), shifts.values(), '.')
 
-    most_shift=list(shifts.keys())[np.argmax(list(shifts.values()))]
-    most_shift_no=np.amax(list(shifts.values()))
-    x_lower=np.amin(list(shifts.keys()))
+    most_shift = list(shifts.keys())[np.argmax(list(shifts.values()))]
+    most_shift_no = np.amax(list(shifts.values()))
+    x_lower = np.amin(list(shifts.keys()))
     x_uppwer = np.amax(list(shifts.keys()))
     plt.text(0.1, 0.9, 'CEPC TB Data', fontsize=15, fontstyle='oblique', fontweight='bold', transform=ax.transAxes,
              horizontalalignment='left', )
-    plt.text(0.1, 0.85, 'TriggerID Shift @{}'.format(run_no), fontsize=10, transform=ax.transAxes, horizontalalignment='left')
+    plt.text(0.1, 0.85, 'TriggerID Shift @{}'.format(run_no), fontsize=10, transform=ax.transAxes,
+             horizontalalignment='left')
 
-    plt.axvline(most_shift,linestyle='--',color='black')
-    plt.annotate('shift={}'.format(most_shift), xy=(most_shift, most_shift_no), xytext=(most_shift+0.15*(x_uppwer-x_lower), most_shift_no),
+    plt.axvline(most_shift, linestyle='--', color='black')
+    plt.annotate('shift={}'.format(most_shift), xy=(most_shift, most_shift_no),
+                 xytext=(most_shift + 0.15 * (x_uppwer - x_lower), most_shift_no),
                  arrowprops=dict(facecolor="red", shrink=0.1, width=2))
     plt.xlabel('Ecal - Ahcal')
     fig_save_path = os.path.join(save_dir, 'Run/{}.png'.format(run_no))
@@ -98,8 +102,8 @@ def main(ecal_file_path,ahcal_file_path,save_dir):
 
     fig2 = plt.figure(figsize=(12, 5))
     plt.subplot(1, 2, 1)
-    plt.plot(np.arange(len(e_raw)),e_raw,'.',label='ecal')
-    plt.plot(np.arange(len(a_raw)),a_raw,'.',label='ahcal')
+    plt.plot(np.arange(len(e_raw)), e_raw, '.', label='ecal')
+    plt.plot(np.arange(len(a_raw)), a_raw, '.', label='ahcal')
     plt.xlabel('Serial Number')
     plt.ylabel('TriggerID')
     plt.legend()
@@ -117,16 +121,16 @@ def main(ecal_file_path,ahcal_file_path,save_dir):
     # print(a_raw)
     # Tom
     cor = []
-    for gap in np.arange(-100,101):
+    for gap in np.arange(-100, 101):
+        _ = ahcal_triggerid_picked + gap
 
-        _ = ahcal_triggerid_picked+gap
-
-        cor.append(len(np.intersect1d(ecal_triggerid_picked,_)))
+        cor.append(len(np.intersect1d(ecal_triggerid_picked, _)))
     fig3 = plt.figure(figsize=(6, 5))
-    plt.plot(np.arange(-100,101),cor,'.')
+    plt.plot(np.arange(-100, 101), cor, '.')
     fig_save_path = os.path.join(save_dir, 'cor_{}.png'.format(run_no))
     plt.savefig(fig_save_path)
     plt.close(fig3)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -135,8 +139,9 @@ if __name__ == '__main__':
     parser.add_argument("--ecal_file_path", type=str, help="root file.")
     parser.add_argument("--ahcal_file_path", type=str, help="root file.")
     parser.add_argument("--save_dir", type=str, help="dir for save.")
+
     args = parser.parse_args()
 
-    main(ecal_file_path=args.ecal_file_path,ahcal_file_path=args.ahcal_file_path,save_dir=args.save_dir)
+    main(ecal_file_path=args.ecal_file_path, ahcal_file_path=args.ahcal_file_path, save_dir=args.save_dir)
 
     pass
